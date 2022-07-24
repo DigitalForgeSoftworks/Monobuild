@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <CustomLevels>
+        <CustomLevel name="NOTICE" intLevel="350"/>
+    </CustomLevels>
+
+    <Appenders>
+
+        <!-- To the user's console -->
+        <Console name="Console" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="[ %d{HH:mm:ss} ] %highlight{%m%n}{NOTICE=cyan}"/>
+        </Console>
+
+        <!-- To console.log -->
+        <RandomAccessFile name="ConsoleFile" fileName="${sys:user.home}/.monobuild/logs/internal/console.log" append="false">
+            <PatternLayout pattern="[ %d{HH:mm:ss} ] %highlight{%m%n}{NOTICE=cyan}"/>
+        </RandomAccessFile>
+
+        <!-- To internal.log from loggers created by monobuild -->
+        <RandomAccessFile name="InternalMonobuildFile" fileName="${sys:user.home}/.monobuild/logs/internal/internal.log" append="false">
+            <PatternLayout pattern="[ %d{HH:mm:ss} ][ %22.22c{1} ] %highlight{%m%n%throwable}{NOTICE=cyan}"/>
+        </RandomAccessFile>
+
+        <!-- To internal.log from all non-monobuild loggers -->
+        <RandomAccessFile name="InternalFile" fileName="${sys:user.home}/.monobuild/logs/internal/internal.log" append="false">
+            <PatternLayout pattern="[ %d{HH:mm:ss} ][ %22.22c{1.} ] %highlight{%m%n%throwable}{NOTICE=cyan}"/>
+        </RandomAccessFile>
+
+    </Appenders>
+
+    <Loggers>
+
+        <!-- These are the console logs that the user sees using the Console class -->
+        <Logger name="org.digitalforge.monobuild.logging.console.Console" additivity="false">
+            <AppenderRef ref="Console"/>
+            <!-- Also send console logs to its own log file -->
+            <AppenderRef ref="ConsoleFile"/>
+        </Logger>
+
+        <!-- This is all loggers obtained with InternalLogging.getLogger() -->
+        <Logger name="org.digitalforge.monobuild.logging.internal" additivity="false">
+            <AppenderRef ref="InternalMonobuildFile"/>
+        </Logger>
+
+        <!-- This is everything else -->
+        <Root level="info">
+            <AppenderRef ref="InternalFile"/>
+        </Root>
+
+    </Loggers>
+
+</Configuration>

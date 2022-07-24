@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+version = '1.0.0'
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies'
+        content {
+            includeGroup 'org.jetbrains.pty4j'
+        }
+    }
+}
+
+dependencies {
+
+    implementation 'me.alexjs:dag:2.0.0'
+    implementation 'com.google.inject:guice:5.0.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+    implementation 'org.digitalforge:sneakythrow:1.0.0'
+    implementation 'info.picocli:picocli:4.6.3'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:6.2.0.202206071550-r'
+    implementation 'org.jetbrains.pty4j:pty4j:0.12.7'
+
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-slf4j18-impl:2.17.2'
+
+}
+
+[compileJava, compileTestJava]*.options.collect { options ->
+    options.compilerArgs.add '-parameters'
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    archiveVersion = ''
+    manifest {
+        attributes(
+            'Main-Class': 'org.digitalforge.monobuild.Main',
+            'Implementation-Version': project.version,
+            'Multi-Release': 'true'
+        )
+    }
+}
+
+// Run this task to rebuild monobuild.jar
+shadowJar {
+    archiveClassifier = ''
+    archiveVersion = ''
+}
+
+test {
+    useJUnitPlatform()
+}
+
+build.dependsOn(shadowJar)
