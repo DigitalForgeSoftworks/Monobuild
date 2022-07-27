@@ -40,4 +40,9 @@ public class MonobuildCommand implements Callable<Integer> {
         return monobuild.deploy();
     }
 
+    @CommandLine.Command(name = "version", description = "Show version & configuration")
+    public Integer version() {
+        return monobuild.version();
+    }
+
 }

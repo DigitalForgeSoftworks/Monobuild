@@ -264,6 +264,11 @@ public class Monobuild {
 
     }
 
+    public int version() {
+        outputHeader();
+        return 0;
+    }
+
     private void outputHeader() {
 
         String version = getClass().getPackage().getImplementationVersion();
