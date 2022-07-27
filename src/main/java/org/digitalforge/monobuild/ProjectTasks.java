@@ -68,6 +68,43 @@ public class ProjectTasks {
 
     }
 
+    public void deployProject(Project project) {
+
+        Path deployScript = project.path.resolve("deploy.sh");
+
+        if(!Files.exists(deployScript) || !Files.isExecutable(deployScript)) {
+            return;
+        }
+
+        timedSafeExecute(project, start -> {
+
+            // Use JetBrains' PtyProcessBuilder to capture colored output
+            PtyProcessBuilder processBuilder = new PtyProcessBuilder().setCommand(new String[] {"sh", "-c", "./deploy.sh"})
+                .setDirectory(project.path.toString())
+                .setRedirectErrorStream(true);
+            processBuilder.setEnvironment(new HashMap<>(System.getenv()));
+
+            Process process = processBuilder.start();
+
+            // Stream the output to a log file and return a reference to the OutputStream
+            Path logFile = logDir.resolve(project.name + ".deploy.log");
+            CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
+
+            if(process.waitFor() != 0) {
+                System.out.println(output.get());
+                long elapsed = System.currentTimeMillis() - start;
+                console.errorLeftRight("Failed to deploy (%s)", console.formatMillis(elapsed), project.name);
+                System.exit(1);
+            }
+            else {
+                long elapsed = System.currentTimeMillis() - start;
+                console.infoLeftRight("Finished deploying (%s)", console.formatMillis(elapsed), project.name);
+            }
+
+        });
+
+    }
+
     public void testProject(Project project) {
 
         timedSafeExecute(project, start -> {

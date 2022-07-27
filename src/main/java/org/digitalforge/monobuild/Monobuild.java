@@ -73,21 +73,10 @@ public class Monobuild {
 
     public int buildTest() {
 
+        outputHeader();
+
         // Start the timer
         long start = System.currentTimeMillis();
-
-        String version = getClass().getPackage().getImplementationVersion();
-        if(version == null) {
-            version = "development";
-        }
-
-        // Print some logs
-        console.infoLeftRight("Monobuild (" + version + ")", "https://github.com/DigitalForgeSoftworks/monobuild");
-        console.infoLeftRight("CI", ci);
-        console.infoLeftRight("Repo directory", repoDir);
-        console.infoLeftRight("Log directory", logDir);
-        console.infoLeftRight("Diff context", oldGitRef + ".." + Constants.HEAD);
-        console.infoLeftRight("Classpath", System.getProperty("java.class.path"));
 
         try {
 
@@ -208,6 +197,86 @@ public class Monobuild {
         }
 
         return 0;
+
+    }
+
+    public int deploy() {
+
+        outputHeader();
+
+        long start = System.currentTimeMillis();
+
+        try {
+
+            List<Project> allProjects = projectHelper.listAllProjects(repoDir);
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD);
+            List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
+            Dag<Project> dag = projectHelper.getDependencyTree(allProjects, repoDir);
+
+            // Build the affected projects, the projects that they depend on, and the projects that depend on them
+            List<Project> projectsToBuild = changedProjects.stream()
+                .flatMap(p -> Streams.concat(dag.getAncestors(p).stream(), dag.getDescendants(p).stream(), Stream.of(p)))
+                .distinct()
+                .sorted(Comparator.comparing(p -> p.name))
+                .collect(Collectors.toList());
+
+            List<Project> projectsToDeploy = projectsToBuild.stream()
+                .filter(project -> Files.isExecutable(project.path.resolve("deploy.sh")))
+                .collect(Collectors.toList());
+
+            StringJoiner deployJoiner = new StringJoiner("\n", "", "\n");
+
+            console.header("Pending Deployment");
+            if (!projectsToDeploy.isEmpty()) {
+                for (Project project : projectsToDeploy) {
+                    Path path = repoDir.relativize(project.path);
+                    console.infoLeftRight(project.name, path);
+                    deployJoiner.add(path.toString());
+                }
+            } else {
+                console.info("No projects to deploy");
+                return 0;
+            }
+
+            writeProjectList("deployed.txt", deployJoiner.toString());
+
+            console.header("Deploying");
+
+            ExecutorService deploymentThreadPool = threadHelper.newThreadPool("deployment", threadCount);
+            dag.retainAll(projectsToBuild);
+            DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, projectTasks::deployProject, deploymentThreadPool);
+
+            if (!buildTask.awaitTermination(30, TimeUnit.MINUTES)) {
+                console.error("Deployment failed");
+                return 1;
+            }
+
+        } catch (InterruptedException | IOException e) {
+            throw SneakyThrow.sneak(e);
+        }
+
+        // Stop the timer
+        console.footer();
+        console.infoLeftRight("Success! Total time", console.formatMillis(System.currentTimeMillis() - start));
+        console.info("You can view all project deployment logs in " + logDir);
+
+        return 0;
+
+    }
+
+    private void outputHeader() {
+
+        String version = getClass().getPackage().getImplementationVersion();
+        if(version == null) {
+            version = "development";
+        }
+
+        // Print some logs
+        console.infoLeftRight("Monobuild (" + version + ")", "https://github.com/DigitalForgeSoftworks/monobuild");
+        console.infoLeftRight("CI", ci);
+        console.infoLeftRight("Repo directory", repoDir);
+        console.infoLeftRight("Log directory", logDir);
+        console.infoLeftRight("Diff context", oldGitRef + ".." + Constants.HEAD);
 
     }
 

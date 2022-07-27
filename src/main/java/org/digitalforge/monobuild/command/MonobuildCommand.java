@@ -35,4 +35,9 @@ public class MonobuildCommand implements Callable<Integer> {
         return monobuild.graph();
     }
 
+    @CommandLine.Command(name = "deploy", description = "Deploy changed projects in the monorepo")
+    public Integer deploy() {
+        return monobuild.deploy();
+    }
+
 }
