@@ -30,7 +30,7 @@ public class Console {
         // The width of the header and footer takes into account the width of the console timestamp from the appender
         // The full width of headers and footers should be 100 characters total
         leftRightFormat = "%-35s: %s";
-        headerFormatFunction = h -> String.format( "=".repeat(((90 - h.length()) / 2) + (h.length() % 2)) + " %%s %s", "=".repeat((90 - h.length()) / 2));
+        headerFormatFunction = h -> String.format( "=".repeat(((90 - h.length()) / 2) + (h.length() % 2) - 1) + " %%s %s", "=".repeat(((90 - h.length()) / 2) - 1));
         footer = "=".repeat(90);
         percentageFormat = NumberFormat.getPercentInstance();
     }
