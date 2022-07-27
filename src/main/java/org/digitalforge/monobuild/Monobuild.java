@@ -168,7 +168,7 @@ public class Monobuild {
 
     }
 
-    public int dag() {
+    public int graph() {
 
         try {
 

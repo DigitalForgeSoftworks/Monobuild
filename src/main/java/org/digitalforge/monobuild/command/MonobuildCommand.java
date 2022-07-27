@@ -30,11 +30,9 @@ public class MonobuildCommand implements Callable<Integer> {
         return monobuild.buildTest();
     }
 
-    @CommandLine.Command(name = "dag", description = "Find and print the DAG of the monorepo")
-    public Integer dag(
-            @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit") boolean help
-    ) {
-        return monobuild.dag();
+    @CommandLine.Command(name = "graph", description = "Find and print the graph of the monorepo")
+    public Integer graph(@CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit") boolean help) {
+        return monobuild.graph();
     }
 
 }
