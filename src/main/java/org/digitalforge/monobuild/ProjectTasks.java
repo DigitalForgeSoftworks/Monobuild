@@ -51,7 +51,7 @@ public class ProjectTasks {
             Process process = processBuilder.start();
 
             // Stream the output to a log file and return a reference to the OutputStream
-            Path logFile = logDir.resolve("build-" + project.name + ".log");
+            Path logFile = logDir.resolve(project.name + ".build.log");
             CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
 
             if (process.waitFor() != 0) {
@@ -119,7 +119,7 @@ public class ProjectTasks {
             Process process = processBuilder.start();
 
             // Stream the output to a log file and return a reference to the OutputStream
-            Path logFile = logDir.resolve("test-" + project.name + ".log");
+            Path logFile = logDir.resolve(project.name + ".test.log");
             CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
 
             if (process.waitFor() != 0) {
