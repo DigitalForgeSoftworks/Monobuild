@@ -43,7 +43,7 @@ public class ProjectTasks {
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
             PtyProcessBuilder processBuilder = new PtyProcessBuilder()
-                .setCommand(new String[]{"sh", "-c", "./.scripts/build"})
+                .setCommand(new String[]{"sh", "-c", "./build.sh"})
                 .setDirectory(project.path.toString())
                 .setRedirectErrorStream(true);
             processBuilder.setEnvironment(new HashMap<>(System.getenv()));
@@ -111,7 +111,7 @@ public class ProjectTasks {
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
             PtyProcessBuilder processBuilder = new PtyProcessBuilder()
-                .setCommand(new String[]{"sh", "-c", "./.scripts/test"})
+                .setCommand(new String[]{"sh", "-c", "./test.sh"})
                 .setDirectory(project.path.toString())
                 .setRedirectErrorStream(true);
             processBuilder.setEnvironment(new HashMap<>(System.getenv()));
