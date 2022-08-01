@@ -33,7 +33,7 @@ import org.digitalforge.sneakythrow.SneakyThrow;
 public class Monobuild {
 
     private final Boolean ci;
-    private final Path tmpDir;
+    private final Path outputDir;
     private final Path logDir;
     private final Path repoDir;
     private final Integer threadCount;
@@ -47,7 +47,7 @@ public class Monobuild {
     @Inject
     public Monobuild(
             @Named("ci") Boolean ci,
-            @Named("tmpDir") Path tmpDir,
+            @Named("outputDir") Path outputDir,
             @Named("logDir") Path logDir,
             @Named("repoDir") Path repoDir,
             @Named("threadCount") Integer threadCount,
@@ -59,7 +59,7 @@ public class Monobuild {
             ThreadHelper threadHelper
     ) {
         this.ci = ci;
-        this.tmpDir = tmpDir;
+        this.outputDir = outputDir;
         this.logDir = logDir;
         this.repoDir = repoDir;
         this.threadCount = threadCount;
@@ -126,7 +126,6 @@ public class Monobuild {
             console.header("Building");
 
             ExecutorService buildThreadPool = threadHelper.newThreadPool("builder", threadCount);
-            ExecutorService testThreadPool = threadHelper.newThreadPool("tester", threadCount);
             dag.retainAll(projectsToBuild);
             DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, projectTasks::buildProject, buildThreadPool);
 
@@ -137,6 +136,7 @@ public class Monobuild {
 
             console.header("Testing");
 
+            ExecutorService testThreadPool = threadHelper.newThreadPool("tester", threadCount);
             DagTraversalTask<Project> testTask = new DagTraversalTask<>(dag, projectTasks::testProject, testThreadPool);
 
             if (!testTask.awaitTermination(30, TimeUnit.MINUTES)) {
@@ -189,8 +189,8 @@ public class Monobuild {
 
             // Write it to a file
             ObjectMapper mapper = new ObjectMapper();
-            String dagJson = mapper.writeValueAsString(outputMap);
-            Files.writeString(tmpDir.resolve("projects/dag.json"), dagJson);
+            String json = mapper.writeValueAsString(outputMap);
+            Files.writeString(outputDir.resolve("projects/graph.json"), json);
 
         } catch (IOException e) {
             throw SneakyThrow.sneak(e);
@@ -211,11 +211,11 @@ public class Monobuild {
             List<Project> allProjects = projectHelper.listAllProjects(repoDir);
             Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD);
             List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
-            Dag<Project> dag = projectHelper.getDependencyTree(allProjects, repoDir);
+            Dag<Project> graph = projectHelper.getDependencyTree(allProjects, repoDir);
 
             // Build the affected projects, the projects that they depend on, and the projects that depend on them
             List<Project> projectsToBuild = changedProjects.stream()
-                .flatMap(p -> Streams.concat(dag.getAncestors(p).stream(), dag.getDescendants(p).stream(), Stream.of(p)))
+                .flatMap(p -> Streams.concat(graph.getAncestors(p).stream(), graph.getDescendants(p).stream(), Stream.of(p)))
                 .distinct()
                 .sorted(Comparator.comparing(p -> p.name))
                 .collect(Collectors.toList());
@@ -243,10 +243,10 @@ public class Monobuild {
             console.header("Deploying");
 
             ExecutorService deploymentThreadPool = threadHelper.newThreadPool("deployment", threadCount);
-            dag.retainAll(projectsToBuild);
-            DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, projectTasks::deployProject, deploymentThreadPool);
+            graph.retainAll(projectsToBuild);
+            DagTraversalTask<Project> deployTask = new DagTraversalTask<>(graph, projectTasks::deployProject, deploymentThreadPool);
 
-            if (!buildTask.awaitTermination(30, TimeUnit.MINUTES)) {
+            if (!deployTask.awaitTermination(30, TimeUnit.MINUTES)) {
                 console.error("Deployment failed");
                 return 1;
             }
@@ -287,7 +287,7 @@ public class Monobuild {
 
     private void writeProjectList(String fileName, String text) {
         try {
-            Path pathsDir = tmpDir.resolve("projects");
+            Path pathsDir = outputDir.resolve("projects");
             if (!Files.exists(pathsDir)) {
                 Files.createDirectories(pathsDir);
             }

@@ -44,16 +44,9 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @Named("homeDir")
+    @Named("outputDir")
     @Singleton
-    public Path provideHomeDir() {
-        return Path.of(System.getProperty("user.home"));
-    }
-
-    @Provides
-    @Named("tmpDir")
-    @Singleton
-    public Path provideLogDir() throws IOException {
+    public Path provideOutputDir() throws IOException {
         Path tmpDir = Path.of("/tmp/monobuild");
         if (!Files.exists(tmpDir)) {
             Files.createDirectories(tmpDir);
@@ -64,7 +57,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @Named("logDir")
     @Singleton
-    public Path provideLogDir(@Named("tmpDir") Path tmpDir) throws IOException {
+    public Path provideLogDir(@Named("outputDir") Path tmpDir) throws IOException {
         Path logDir = tmpDir.resolve("logs");
         if (!Files.exists(logDir)) {
             Files.createDirectories(logDir);

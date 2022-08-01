@@ -17,16 +17,13 @@ public class Console {
 
     private static final Logger CONSOLE = LoggerFactory.getLogger(Console.class);
 
-    private final Path homeDir;
     private final String leftRightFormat;
     private final Function<String, String> headerFormatFunction;
     private final String footer;
     private final NumberFormat percentageFormat;
 
     @Inject
-    public Console(@Named("homeDir") Path homeDir) {
-        this.homeDir = homeDir;
-
+    public Console() {
         // The width of the header and footer takes into account the width of the console timestamp from the appender
         // The full width of headers and footers should be 100 characters total
         leftRightFormat = "%-35s: %s";
@@ -77,10 +74,6 @@ public class Console {
         } else {
             return String.format("%sm %ss", duration.toMinutes(), duration.toSecondsPart() + Math.round(duration.toMillisPart() / 1000d));
         }
-    }
-
-    public String relativeToHome(Path path) {
-        return "~/" + homeDir.relativize(path);
     }
 
     public String toPercent(int top, int bottom) {
