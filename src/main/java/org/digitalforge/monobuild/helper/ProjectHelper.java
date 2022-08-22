@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -115,8 +116,7 @@ public class ProjectHelper {
 
             // Each "includeBuild" line represents an edge in the DAG
             try (Stream<String> lines = Files.lines(settings)) {
-                lines.filter(line -> line.startsWith("includeBuild")) // This seems unnecessary given the regex match
-                        .map(line -> Pattern.compile("^includeBuild \\(*['\"](.*)['\"]\\)*.*$").matcher(line))
+                lines.map(IncludeBuildMatcher.INSTANCE)
                         .filter(Matcher::matches)
                         .map(matcher -> matcher.group(1))
                         .map(project.path::resolve)
@@ -131,6 +131,19 @@ public class ProjectHelper {
         }
 
         return dag;
+
+    }
+
+    private static class IncludeBuildMatcher implements Function<String, Matcher> {
+
+        public static final IncludeBuildMatcher INSTANCE = new IncludeBuildMatcher();
+
+        private static final Pattern REGEX = Pattern.compile("(?://#)?includeBuild \\(*['\"](.*)['\"]\\)*.*");
+
+        @Override
+        public Matcher apply(String s) {
+            return REGEX.matcher(s);
+        }
 
     }
 
