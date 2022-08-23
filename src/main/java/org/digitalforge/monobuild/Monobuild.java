@@ -3,14 +3,11 @@ package org.digitalforge.monobuild;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -71,7 +68,7 @@ public class Monobuild {
         this.threadHelper = threadHelper;
     }
 
-    public int buildTest() {
+    public int buildTest(String[] args) {
 
         outputHeader();
 
@@ -127,7 +124,8 @@ public class Monobuild {
 
             ExecutorService buildThreadPool = threadHelper.newThreadPool("builder", threadCount);
             dag.retainAll(projectsToBuild);
-            DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, projectTasks::buildProject, buildThreadPool);
+            BiConsumer<Project, String[]> builder = (project, args2) -> {projectTasks.buildProject(project, args2);};
+            DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, new BiConsumerTask(args, builder), buildThreadPool);
 
             if (!buildTask.awaitTermination(30, TimeUnit.MINUTES)) {
                 console.error("Building failed");
@@ -137,7 +135,8 @@ public class Monobuild {
             console.header("Testing");
 
             ExecutorService testThreadPool = threadHelper.newThreadPool("tester", threadCount);
-            DagTraversalTask<Project> testTask = new DagTraversalTask<>(dag, projectTasks::testProject, testThreadPool);
+            BiConsumer<Project, String[]> tester = (project, args2) -> {projectTasks.testProject(project, args2);};
+            DagTraversalTask<Project> testTask = new DagTraversalTask<>(dag, new BiConsumerTask(args, tester), testThreadPool);
 
             if (!testTask.awaitTermination(30, TimeUnit.MINUTES)) {
                 console.error("Testing failed");
@@ -200,7 +199,7 @@ public class Monobuild {
 
     }
 
-    public int deploy() {
+    public int deploy(String[] args) {
 
         outputHeader();
 
@@ -244,7 +243,8 @@ public class Monobuild {
 
             ExecutorService deploymentThreadPool = threadHelper.newThreadPool("deployment", threadCount);
             graph.retainAll(projectsToBuild);
-            DagTraversalTask<Project> deployTask = new DagTraversalTask<>(graph, projectTasks::deployProject, deploymentThreadPool);
+            BiConsumer<Project, String[]> deployer = (project, args2) -> {projectTasks.testProject(project, args2);};
+            DagTraversalTask<Project> deployTask = new DagTraversalTask<>(graph, new BiConsumerTask(args, deployer), deploymentThreadPool);
 
             if (!deployTask.awaitTermination(30, TimeUnit.MINUTES)) {
                 console.error("Deployment failed");
@@ -295,6 +295,23 @@ public class Monobuild {
         } catch (IOException e) {
             throw SneakyThrow.sneak(e);
         }
+    }
+
+    private static class BiConsumerTask implements Consumer<Project> {
+
+        private final String[] args;
+        private final BiConsumer<Project, String[]> biconsumer;
+
+        private BiConsumerTask(String[] args, BiConsumer biconsumer) {
+            this.args = args;
+            this.biconsumer = biconsumer;
+        }
+
+        @Override
+        public void accept(Project project) {
+            biconsumer.accept(project, args);
+        }
+
     }
 
 }

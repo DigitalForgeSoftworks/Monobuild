@@ -3,7 +3,9 @@ package org.digitalforge.monobuild;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
@@ -38,13 +40,17 @@ public class ProjectTasks {
         this.streamHelper = streamHelper;
     }
 
-    public void buildProject(Project project) {
+    public void buildProject(Project project, String[] args) {
+
+        List<String> cmd = new ArrayList<>(3 + args.length);
+        cmd.addAll(List.of("sh", "-c", "./build.sh"));
+        cmd.addAll(List.of(args));
 
         timedSafeExecute(project, start -> {
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
             PtyProcessBuilder processBuilder = new PtyProcessBuilder()
-                .setCommand(new String[]{"sh", "-c", "./build.sh"})
+                .setCommand(cmd.toArray(new String[cmd.size()]))
                 .setDirectory(project.path.toString())
                 .setRedirectErrorStream(true);
             processBuilder.setEnvironment(new HashMap<>(System.getenv()));
@@ -69,7 +75,11 @@ public class ProjectTasks {
 
     }
 
-    public void deployProject(Project project) {
+    public void deployProject(Project project, String[] args) {
+
+        List<String> cmd = new ArrayList<>(3 + args.length);
+        cmd.addAll(List.of("sh", "-c", "./deploy.sh"));
+        cmd.addAll(List.of(args));
 
         Path deployScript = project.path.resolve("deploy.sh");
 
@@ -80,7 +90,8 @@ public class ProjectTasks {
         timedSafeExecute(project, start -> {
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
-            PtyProcessBuilder processBuilder = new PtyProcessBuilder().setCommand(new String[] {"sh", "-c", "./deploy.sh"})
+            PtyProcessBuilder processBuilder = new PtyProcessBuilder()
+                .setCommand(cmd.toArray(new String[cmd.size()]))
                 .setDirectory(project.path.toString())
                 .setRedirectErrorStream(true);
             processBuilder.setEnvironment(new HashMap<>(System.getenv()));
@@ -106,13 +117,17 @@ public class ProjectTasks {
 
     }
 
-    public void testProject(Project project) {
+    public void testProject(Project project, String[] args) {
+
+        List<String> cmd = new ArrayList<>(3 + args.length);
+        cmd.addAll(List.of("sh", "-c", "./test.sh"));
+        cmd.addAll(List.of(args));
 
         timedSafeExecute(project, start -> {
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
             PtyProcessBuilder processBuilder = new PtyProcessBuilder()
-                .setCommand(new String[]{"sh", "-c", "./test.sh"})
+                .setCommand(cmd.toArray(new String[cmd.size()]))
                 .setDirectory(project.path.toString())
                 .setRedirectErrorStream(true);
             processBuilder.setEnvironment(new HashMap<>(System.getenv()));

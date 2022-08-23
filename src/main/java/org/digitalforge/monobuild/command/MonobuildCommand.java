@@ -1,5 +1,6 @@
 package org.digitalforge.monobuild.command;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,6 +21,9 @@ public class MonobuildCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit")
     private boolean help;
 
+    @CommandLine.Parameters
+    private List<String> parameters;
+
     @Inject
     public MonobuildCommand(Monobuild monobuild) {
         this.monobuild = monobuild;
@@ -27,7 +31,10 @@ public class MonobuildCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        return monobuild.buildTest();
+        if(parameters == null) {
+            parameters = List.of();
+        }
+        return monobuild.buildTest(parameters.toArray(new String[parameters.size()]));
     }
 
     @CommandLine.Command(name = "graph", description = "Find and print the graph of the monorepo")
@@ -36,8 +43,11 @@ public class MonobuildCommand implements Callable<Integer> {
     }
 
     @CommandLine.Command(name = "deploy", description = "Deploy changed projects in the monorepo")
-    public Integer deploy() {
-        return monobuild.deploy();
+    public Integer deploy(@CommandLine.Parameters String[] parameters) {
+        if(parameters == null) {
+            parameters = new String[0];
+        }
+        return monobuild.deploy(parameters);
     }
 
     @CommandLine.Command(name = "version", description = "Show version & configuration")
