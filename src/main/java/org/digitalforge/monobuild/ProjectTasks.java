@@ -68,6 +68,7 @@ public class ProjectTasks {
 
             if(process.waitFor() != 0) {
                 System.out.println(output.get());
+                System.out.flush();
                 long elapsed = System.currentTimeMillis() - start;
                 console.errorLeftRight("Failed to build (%s)", console.formatMillis(elapsed), project.name);
                 System.exit(1);
@@ -110,6 +111,7 @@ public class ProjectTasks {
 
             if(process.waitFor() != 0) {
                 System.out.println(output.get());
+                System.out.flush();
                 long elapsed = System.currentTimeMillis() - start;
                 console.errorLeftRight("Failed to deploy (%s)", console.formatMillis(elapsed), project.name);
                 System.exit(1);
@@ -146,6 +148,7 @@ public class ProjectTasks {
 
             if(process.waitFor() != 0) {
                 System.out.println(output.get());
+                System.out.flush();
                 long elapsed = System.currentTimeMillis() - start;
                 console.errorLeftRight("Failed to test (%s)", console.formatMillis(elapsed), project.name);
                 System.exit(1);
