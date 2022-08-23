@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -132,17 +134,16 @@ public class RepoHelper {
                 .directory(directory)
                 .start();
 
-            try(BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
-                String error = br.lines().collect(Collectors.joining("\n"));
-                if(!error.isBlank()) {
-                    console.error(error);
-                    System.exit(1);
+            List<String> lines = new LinkedList<>();
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while((line = br.readLine()) != null) {
+                    lines.add(line);
                 }
             }
 
-            try(BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                return br.lines().collect(Collectors.toList());
-            }
+            return lines;
 
         } catch(Exception ex) {
             throw SneakyThrow.sneak(ex);

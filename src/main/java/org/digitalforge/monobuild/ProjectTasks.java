@@ -1,8 +1,10 @@
 package org.digitalforge.monobuild;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,16 +61,19 @@ public class ProjectTasks {
 
             // Stream the output to a log file and return a reference to the OutputStream
             Path logFile = logDir.resolve(project.name + ".build.log");
-            CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
 
-            if (process.waitFor() != 0) {
-                System.out.println(output.get());
-                long elapsed = System.currentTimeMillis() - start;
-                console.errorLeftRight("Failed to build (%s)", console.formatMillis(elapsed), project.name);
-                System.exit(1);
-            } else {
-                long elapsed = System.currentTimeMillis() - start;
-                console.infoLeftRight("Finished building (%s)", console.formatMillis(elapsed), project.name);
+            try(OutputStream fout = Files.newOutputStream(logFile, StandardOpenOption.CREATE); OutputStream out = streamHelper.teeStream(process.getInputStream(), System.out, fout)) {
+
+                if (process.waitFor() != 0) {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.errorLeftRight("Failed to build (%s)", console.formatMillis(elapsed), project.name);
+                    System.exit(1);
+                }
+                else {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.infoLeftRight("Finished building (%s)", console.formatMillis(elapsed), project.name);
+                }
+
             }
 
         });
@@ -100,17 +105,18 @@ public class ProjectTasks {
 
             // Stream the output to a log file and return a reference to the OutputStream
             Path logFile = logDir.resolve(project.name + ".deploy.log");
-            CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
+            try(OutputStream fout = Files.newOutputStream(logFile, StandardOpenOption.CREATE); OutputStream out = streamHelper.teeStream(process.getInputStream(), System.out, fout)) {
 
-            if(process.waitFor() != 0) {
-                System.out.println(output.get());
-                long elapsed = System.currentTimeMillis() - start;
-                console.errorLeftRight("Failed to deploy (%s)", console.formatMillis(elapsed), project.name);
-                System.exit(1);
-            }
-            else {
-                long elapsed = System.currentTimeMillis() - start;
-                console.infoLeftRight("Finished deploying (%s)", console.formatMillis(elapsed), project.name);
+                if (process.waitFor() != 0) {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.errorLeftRight("Failed to deploy (%s)", console.formatMillis(elapsed), project.name);
+                    System.exit(1);
+                }
+                else {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.infoLeftRight("Finished deploying (%s)", console.formatMillis(elapsed), project.name);
+                }
+
             }
 
         });
@@ -136,16 +142,18 @@ public class ProjectTasks {
 
             // Stream the output to a log file and return a reference to the OutputStream
             Path logFile = logDir.resolve(project.name + ".test.log");
-            CompletableFuture<String> output = streamHelper.forkToFileAndString(process.getInputStream(), logFile);
+            try(OutputStream fout = Files.newOutputStream(logFile, StandardOpenOption.CREATE); OutputStream out = streamHelper.teeStream(process.getInputStream(), System.out, fout)) {
 
-            if (process.waitFor() != 0) {
-                System.out.println(output.get());
-                long elapsed = System.currentTimeMillis() - start;
-                console.errorLeftRight("Failed to test (%s)", console.formatMillis(elapsed), project.name);
-                System.exit(1);
-            } else {
-                long elapsed = System.currentTimeMillis() - start;
-                console.infoLeftRight("Finished testing (%s)", console.formatMillis(elapsed), project.name);
+                if (process.waitFor() != 0) {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.errorLeftRight("Failed to test (%s)", console.formatMillis(elapsed), project.name);
+                    System.exit(1);
+                }
+                else {
+                    long elapsed = System.currentTimeMillis() - start;
+                    console.infoLeftRight("Finished testing (%s)", console.formatMillis(elapsed), project.name);
+                }
+
             }
 
         });

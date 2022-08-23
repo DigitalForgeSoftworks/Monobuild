@@ -32,4 +32,8 @@ public class StreamHelper {
 
     }
 
+    public OutputStream teeStream(InputStream in, OutputStream out1, OutputStream out2) {
+        return new TeeOutputStream(out1, out2);
+    }
+
 }
