@@ -122,17 +122,23 @@ public class RepoHelper {
             console.info(s);
         }
 
+        Collection<String> stagedChanges = runCommand(repoDir, "git", "diff", "--name-status", "--cached")
+                .stream()
+                .flatMap(new DiffSplitter())
+                .collect(Collectors.toList());
         Collection<String> workingChanges = runCommand(repoDir, "git", "diff", "--name-status")
                 .stream()
                 .flatMap(new DiffSplitter())
                 .collect(Collectors.toList());
+
+        changedFiles.addAll(workingChanges);
+        changedFiles.addAll(stagedChanges);
+
         console.header("Files changed & not yet committed");
-        for(String s : workingChanges) {
+        for(String s : changedFiles) {
             console.info(s);
         }
 
-
-        changedFiles.addAll(workingChanges);
         changedFiles.addAll(filesChanged);
 
         return filesChanged;
