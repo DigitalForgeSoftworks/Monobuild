@@ -100,32 +100,31 @@ public class RepoHelper {
 
     }
 
-    public Collection<String> diff(File repoDir, String oldRef, String newRef) {
+    public Collection<String> diff(File repoDir, String oldRef, String newRef, String mainBranchName) {
 
-        Set<String> changedFiles = new TreeSet<>();
+        //BIG NOTE: We ONLY want to build projects where the developer has changed files.  We do NOT want to waste time
+        //building projects from files changed on master as they are not yet on this branch anyways and that was causing
+        //major delays in the build times.  This also happens locally to developers who fetch master all the time and it
+        //starts building other projects really really confusing people since they had not changed those files.
 
-        Collection<String> workingChanges = runCommand(repoDir, "git", "diff", "--name-status")
-            .stream()
-            .flatMap(new DiffSplitter())
-            .collect(Collectors.toList());
-        Collection<String> stagedChanges = runCommand(repoDir, "git", "diff", "--name-status", "--cached")
-            .stream()
-            .flatMap(new DiffSplitter())
-            .collect(Collectors.toList());
-        Collection<String> branchChanges = runCommand(repoDir, "git", "diff", "--name-status", oldRef + ".." + newRef)
-            .stream()
-            .flatMap(new DiffSplitter())
-            .collect(Collectors.toList());
+        List<String> coll = runCommand(repoDir, "git", "rev-parse", "--abbrev-ref", "HEAD");
+        console.infoLeftRight("Current branch", coll);//use whole list in case empty or more than 1
+        String currentBranc = coll.get(0); //let it just fail with exception if not there
+        //PLEASE READ post https://stackoverflow.com/questions/17493925/how-to-view-changed-files-on-git-branch-and-difference
+        List<String> hashForkPointOfBranch = runCommand(repoDir, "git", "merge-base", currentBranc, mainBranchName);
+        console.infoLeftRight("Branched from Hash", hashForkPointOfBranch);//again, use whole list in case empty or more than 1
+        String hash = hashForkPointOfBranch.get(0); //let it just fail with exception and we can debug
 
-        changedFiles.addAll(workingChanges);
-        changedFiles.addAll(stagedChanges);
-        changedFiles.addAll(branchChanges);
+        List<String> filesChanged = runCommand(repoDir, "git", "diff", "--name-only", hash, currentBranc);
+        console.header("Files changed in PR");
+        for(String s : filesChanged) {
+            console.info(s);
+        }
 
-        return changedFiles;
-
+        return filesChanged;
     }
 
-    private Collection<String> runCommand(File directory, String... command) {
+    private List<String> runCommand(File directory, String... command) {
 
         try {
 
@@ -147,20 +146,6 @@ public class RepoHelper {
 
         } catch(Exception ex) {
             throw SneakyThrow.sneak(ex);
-        }
-
-    }
-
-    private class DiffSplitter implements Function<String, Stream<String>> {
-
-        @Override
-        public Stream<String> apply(String s) {
-            String[] split = s.split("\t");
-            if(split.length == 2) {
-                return Stream.of(split[1]);
-            } else {
-                return Stream.of(split[1], split[2]);
-            }
         }
 
     }
