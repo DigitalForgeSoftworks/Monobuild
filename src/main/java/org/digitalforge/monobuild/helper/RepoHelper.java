@@ -102,6 +102,7 @@ public class RepoHelper {
 
     public Collection<String> diff(File repoDir, String oldRef, String newRef, String mainBranchName) {
 
+        Set<String> changedFiles = new TreeSet<>();
         //BIG NOTE: We ONLY want to build projects where the developer has changed files.  We do NOT want to waste time
         //building projects from files changed on master as they are not yet on this branch anyways and that was causing
         //major delays in the build times.  This also happens locally to developers who fetch master all the time and it
@@ -116,10 +117,23 @@ public class RepoHelper {
         String hash = hashForkPointOfBranch.get(0); //let it just fail with exception and we can debug
 
         List<String> filesChanged = runCommand(repoDir, "git", "diff", "--name-only", hash, currentBranc);
-        console.header("Files changed in PR");
+        console.header("Files changed/comitted in branch");
         for(String s : filesChanged) {
             console.info(s);
         }
+
+        Collection<String> workingChanges = runCommand(repoDir, "git", "diff", "--name-status")
+                .stream()
+                .flatMap(new DiffSplitter())
+                .collect(Collectors.toList());
+        console.header("Files changed & not yet committed");
+        for(String s : workingChanges) {
+            console.info(s);
+        }
+
+
+        changedFiles.addAll(workingChanges);
+        changedFiles.addAll(filesChanged);
 
         return filesChanged;
     }
@@ -146,6 +160,20 @@ public class RepoHelper {
 
         } catch(Exception ex) {
             throw SneakyThrow.sneak(ex);
+        }
+
+    }
+
+    private class DiffSplitter implements Function<String, Stream<String>> {
+
+        @Override
+        public Stream<String> apply(String s) {
+            String[] split = s.split("\t");
+            if(split.length == 2) {
+                return Stream.of(split[1]);
+            } else {
+                return Stream.of(split[1], split[2]);
+            }
         }
 
     }
