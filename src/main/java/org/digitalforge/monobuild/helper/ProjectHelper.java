@@ -17,15 +17,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import me.alexjs.dag.Dag;
 import me.alexjs.dag.HashDag;
 
 import org.digitalforge.monobuild.Project;
+import org.digitalforge.monobuild.logging.console.Console;
 
 @Singleton
 public class ProjectHelper {
+
+    private Console console;
+
+    @Inject
+    public ProjectHelper(Console console) {
+        this.console = console;
+    }
 
     public List<Project> listAllProjects(Path repoDir) throws IOException {
 
@@ -84,22 +93,24 @@ public class ProjectHelper {
 
     public List<Project> getChangedProjects(List<Project> projects, Collection<String> diffs, Path repoDir) {
 
+        console.header("All projects discovered in monorepo");
+        for(Project p : projects) {
+            console.infoLeftRight(p.name, p.path);
+        }
         Set<Project> changedProjects = new HashSet<>();
-        diffs.stream()
-            .forEach(file -> {
-                for (Project project : projects) {
-                    // If this changed file is in this project, then this project has been changed
-                    if (repoDir.resolve(file).startsWith(project.path)) {
-                        changedProjects.add(project);
-                        break;
-                    }
+        for(String changedFile : diffs) {
+            for (Project project : projects) {
+                // If this changed file is in this project, then this project has been changed
+                if (repoDir.resolve(changedFile).startsWith(project.path)) {
+                    changedProjects.add(project);
+                    break;
                 }
-            });
+            }
+        }
 
         return changedProjects.stream()
             .sorted(Comparator.comparing(p -> p.name))
             .collect(Collectors.toList());
-
     }
 
     public Dag<Project> getDependencyTree(List<Project> projects, Path repoDir) throws IOException {

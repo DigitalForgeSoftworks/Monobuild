@@ -29,6 +29,9 @@ import org.digitalforge.sneakythrow.SneakyThrow;
 @Singleton
 public class Monobuild {
 
+    //TODO: make this part of monobuildConfig.json so you can configure the monobuild
+    private final static String MAIN = "main"; //or 'master' for legacy githubs
+
     private final Boolean ci;
     private final Path outputDir;
     private final Path logDir;
@@ -78,7 +81,8 @@ public class Monobuild {
         try {
 
             List<Project> allProjects = projectHelper.listAllProjects(repoDir);
-            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD);
+            //TODO: modify main branch to be a configuration thing(monobuildConfig.json perhaps as yml sucks)
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, MAIN);
             List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
             Dag<Project> dag = projectHelper.getDependencyTree(allProjects, repoDir);
 
@@ -208,7 +212,7 @@ public class Monobuild {
         try {
 
             List<Project> allProjects = projectHelper.listAllProjects(repoDir);
-            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD);
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, MAIN);
             List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
             Dag<Project> graph = projectHelper.getDependencyTree(allProjects, repoDir);
 

@@ -36,4 +36,11 @@ public class Project implements Comparable<Project> {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "Project{" +
+                "name='" + name + '\'' +
+                ", path=" + path +
+                '}';
+    }
 }
