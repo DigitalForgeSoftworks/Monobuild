@@ -102,7 +102,7 @@ public class RepoHelper {
 
     public Collection<String> diff(File repoDir, String oldRef, String newRef, String mainBranchName) {
 
-        Set<String> changedFiles = new TreeSet<>();
+        Set<String> allChangedFiles = new TreeSet<>();
         //BIG NOTE: We ONLY want to build projects where the developer has changed files.  We do NOT want to waste time
         //building projects from files changed on master as they are not yet on this branch anyways and that was causing
         //major delays in the build times.  This also happens locally to developers who fetch master all the time and it
@@ -116,9 +116,9 @@ public class RepoHelper {
         console.infoLeftRight("Branched from Hash", hashForkPointOfBranch);//again, use whole list in case empty or more than 1
         String hash = hashForkPointOfBranch.get(0); //let it just fail with exception and we can debug
 
-        List<String> filesChanged = runCommand(repoDir, "git", "diff", "--name-only", hash, currentBranc);
+        List<String> filesCommitted = runCommand(repoDir, "git", "diff", "--name-only", hash, currentBranc);
         console.header("Files changed/comitted in branch");
-        for(String s : filesChanged) {
+        for(String s : filesCommitted) {
             console.info(s);
         }
 
@@ -131,17 +131,17 @@ public class RepoHelper {
                 .flatMap(new DiffSplitter())
                 .collect(Collectors.toList());
 
-        changedFiles.addAll(workingChanges);
-        changedFiles.addAll(stagedChanges);
+        allChangedFiles.addAll(workingChanges);
+        allChangedFiles.addAll(stagedChanges);
 
         console.header("Files changed & not yet committed");
-        for(String s : changedFiles) {
+        for(String s : allChangedFiles) {
             console.info(s);
         }
 
-        changedFiles.addAll(filesChanged);
+        allChangedFiles.addAll(filesCommitted);
 
-        return filesChanged;
+        return allChangedFiles;
     }
 
     private List<String> runCommand(File directory, String... command) {
