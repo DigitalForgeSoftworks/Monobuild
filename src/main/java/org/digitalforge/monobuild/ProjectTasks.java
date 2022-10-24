@@ -28,19 +28,16 @@ public class ProjectTasks {
 
     private final Path logDir;
     private final Path repoDir;
-    private final String gitHash;
     private final Console console;
     private final StreamHelper streamHelper;
 
     @Inject
     public ProjectTasks(@Named("logDir") Path logDir,
                         @Named("repoDir") Path repoDir,
-                        @Named("gitHash") String gitHash,
                         Console console,
                         StreamHelper streamHelper) {
         this.logDir = logDir;
         this.repoDir = repoDir;
-        this.gitHash = gitHash;
         this.console = console;
         this.streamHelper = streamHelper;
     }

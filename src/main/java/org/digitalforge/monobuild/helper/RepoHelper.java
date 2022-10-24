@@ -56,21 +56,6 @@ public class RepoHelper {
 
     }
 
-    public String getGitHash(File gitDir) {
-
-        File file = RepositoryCache.FileKey.lenient(gitDir, FS.DETECTED).getFile();
-        try (Repository repo = new RepositoryBuilder().setGitDir(file).build();
-             RevWalk walk = new RevWalk(repo)) {
-            RevCommit commit = walk.parseCommit(repo.resolve("HEAD"));
-            return commit.getName();
-        } catch (NullPointerException exception) {
-            return null;
-        } catch (IOException e) {
-            throw SneakyThrow.sneak(e);
-        }
-
-    }
-
     public String getMainBranchName(Path repoDir) {
 
         try {

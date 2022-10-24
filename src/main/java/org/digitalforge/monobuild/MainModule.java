@@ -66,13 +66,6 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @Named("gitHash")
-    @Singleton
-    public String provideGitHash(RepoHelper repoHelper, @Named("repoDir") Path repoDir) {
-        return Objects.requireNonNullElseGet(System.getenv("CIRCLE_SHA1"), () -> repoHelper.getGitHash(repoDir.toFile()));
-    }
-
-    @Provides
     @Named("threadCount")
     @Singleton
     public Integer provideThreadCount(@Named("ci") Boolean ci) {
