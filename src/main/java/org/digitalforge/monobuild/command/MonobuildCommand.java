@@ -21,7 +21,7 @@ public class MonobuildCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit")
     private boolean help;
 
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    @CommandLine.ArgGroup(exclusive = true)
     private BuildOptions buildOptions;
 
     @CommandLine.Parameters
@@ -38,9 +38,12 @@ public class MonobuildCommand implements Callable<Integer> {
             parameters = List.of();
         }
 
-        String baseRef = buildOptions.baseTag;
-        if(baseRef == null) {
-            baseRef = buildOptions.baseBranch;
+        String baseRef = null;
+        if(buildOptions != null) {
+            baseRef = buildOptions.baseTag;
+            if(baseRef == null) {
+                baseRef = buildOptions.baseBranch;
+            }
         }
 
         return monobuild.buildTest(parameters.toArray(new String[parameters.size()]), baseRef);
@@ -56,9 +59,12 @@ public class MonobuildCommand implements Callable<Integer> {
         if(parameters == null) {
             parameters = new String[0];
         }
-        String baseRef = buildOptions.baseTag;
-        if(baseRef == null) {
-            baseRef = buildOptions.baseBranch;
+        String baseRef = null;
+        if(buildOptions != null) {
+            baseRef = buildOptions.baseTag;
+            if(baseRef == null) {
+                baseRef = buildOptions.baseBranch;
+            }
         }
         return monobuild.deploy(parameters, baseRef);
     }
