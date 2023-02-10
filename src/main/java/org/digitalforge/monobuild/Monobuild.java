@@ -71,7 +71,11 @@ public class Monobuild {
         this.threadHelper = threadHelper;
     }
 
-    public int buildTest(String[] args) {
+    public int buildTest(String[] args, String baseRef) {
+
+        if(baseRef == null) {
+            baseRef = MAIN;
+        }
 
         outputHeader();
 
@@ -203,7 +207,11 @@ public class Monobuild {
 
     }
 
-    public int deploy(String[] args) {
+    public int deploy(String[] args, String baseRef) {
+
+        if(baseRef == null) {
+            baseRef = MAIN;
+        }
 
         outputHeader();
 
@@ -212,7 +220,7 @@ public class Monobuild {
         try {
 
             List<Project> allProjects = projectHelper.listAllProjects(repoDir);
-            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, MAIN);
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, baseRef);
             List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
             Dag<Project> graph = projectHelper.getDependencyTree(allProjects, repoDir);
 

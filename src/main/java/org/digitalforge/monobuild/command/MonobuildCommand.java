@@ -21,6 +21,9 @@ public class MonobuildCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit")
     private boolean help;
 
+    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    private BuildOptions buildOptions;
+
     @CommandLine.Parameters
     private List<String> parameters;
 
@@ -34,7 +37,13 @@ public class MonobuildCommand implements Callable<Integer> {
         if(parameters == null) {
             parameters = List.of();
         }
-        return monobuild.buildTest(parameters.toArray(new String[parameters.size()]));
+
+        String baseRef = buildOptions.baseTag;
+        if(baseRef == null) {
+            baseRef = buildOptions.baseBranch;
+        }
+
+        return monobuild.buildTest(parameters.toArray(new String[parameters.size()]), baseRef);
     }
 
     @CommandLine.Command(name = "graph", description = "Find and print the graph of the monorepo")
@@ -47,12 +56,26 @@ public class MonobuildCommand implements Callable<Integer> {
         if(parameters == null) {
             parameters = new String[0];
         }
-        return monobuild.deploy(parameters);
+        String baseRef = buildOptions.baseTag;
+        if(baseRef == null) {
+            baseRef = buildOptions.baseBranch;
+        }
+        return monobuild.deploy(parameters, baseRef);
     }
 
     @CommandLine.Command(name = "version", description = "Show version & configuration")
     public Integer version() {
         return monobuild.version();
+    }
+
+    static class BuildOptions {
+
+        @CommandLine.Option(names = {"-t", "--tag"}, description = "Base tag to compare against")
+        String baseTag;
+
+        @CommandLine.Option(names = {"-b", "--branch"}, description = "Base branch to compare against")
+        String baseBranch;
+
     }
 
 }
