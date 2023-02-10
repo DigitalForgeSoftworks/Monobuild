@@ -86,7 +86,7 @@ public class Monobuild {
 
             List<Project> allProjects = projectHelper.listAllProjects(repoDir);
             //TODO: modify main branch to be a configuration thing(monobuildConfig.json perhaps as yml sucks)
-            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, MAIN);
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, baseRef);
             List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
             Dag<Project> dag = projectHelper.getDependencyTree(allProjects, repoDir);
 
