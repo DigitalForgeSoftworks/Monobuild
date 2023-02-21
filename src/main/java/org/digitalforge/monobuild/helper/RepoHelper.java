@@ -97,7 +97,13 @@ public class RepoHelper {
         console.infoLeftRight("Current branch", coll);//use whole list in case empty or more than 1
         String currentBranc = coll.get(0); //let it just fail with exception if not there
         //PLEASE READ post https://stackoverflow.com/questions/17493925/how-to-view-changed-files-on-git-branch-and-difference
-        List<String> hashForkPointOfBranch = runCommand(repoDir, "git", "merge-base", currentBranc, mainBranchName);
+        //In case we merged changes to main branch, we should know difference between last and current commit
+        List<String> hashForkPointOfBranch;
+        if (currentBranc.equals(mainBranchName)) {
+            hashForkPointOfBranch = runCommand(repoDir, "git", "merge-base", currentBranc, "HEAD^1");
+        } else {
+            hashForkPointOfBranch = runCommand(repoDir, "git", "merge-base", currentBranc, mainBranchName);
+        }
         console.infoLeftRight("Branched from Hash", hashForkPointOfBranch);//again, use whole list in case empty or more than 1
         String hash = hashForkPointOfBranch.get(0); //let it just fail with exception and we can debug
 
