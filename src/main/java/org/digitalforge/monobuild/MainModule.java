@@ -14,8 +14,8 @@ import org.digitalforge.monobuild.helper.RepoHelper;
 
 public class MainModule extends AbstractModule {
 
-    private static final int CI_THREAD_COUNT = 3;
-    private static final int DEFAULT_THREAD_COUNT = 3;
+    private static final int CI_THREAD_COUNT = 1;
+    private static final int DEFAULT_THREAD_COUNT = 1;
 
     @Override
     protected void configure() {
