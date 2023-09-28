@@ -151,7 +151,7 @@ public class ProjectHelper {
 
         public static final IncludeBuildMatcher INSTANCE = new IncludeBuildMatcher();
 
-        private static final Pattern REGEX = Pattern.compile("(?://#)?includeBuild \\(*['\"](.*)['\"]\\)*.*");
+        private static final Pattern REGEX = Pattern.compile("(?://#)?includeBuild[ \\(*]*['\"](.*)['\"][ \\)]*.*");
 
         @Override
         public Matcher apply(String s) {
