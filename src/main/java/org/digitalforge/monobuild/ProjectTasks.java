@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,6 +50,8 @@ public class ProjectTasks {
         cmd.addAll(List.of(args));
 
         timedSafeExecute(project, start -> {
+
+            console.infoLeftRight("Starting to build", project.name);
 
             // Use JetBrains' PtyProcessBuilder to capture colored output
             PtyProcessBuilder processBuilder = new PtyProcessBuilder()
