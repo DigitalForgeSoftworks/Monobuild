@@ -72,7 +72,9 @@ public class ProjectHelper {
                         }
                         return false;
                     })
-                    .filter(d -> Files.exists(d.resolve("settings.gradle"))
+                    .filter(d ->
+                            Files.exists(d.resolve("settings.gradle"))
+                            || Files.exists(d.resolve("settings.gradle.kts"))
                             || Files.exists(d.resolve("local_requirements.txt"))
                             || Files.exists(d.resolve("setup.cfg"))
                             || Files.exists(d.resolve("package.json")))
