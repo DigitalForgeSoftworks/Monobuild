@@ -124,7 +124,10 @@ public class ProjectHelper {
 
             Path settings = repoDir.resolve(project.path.resolve("settings.gradle"));
             if (!Files.exists(settings)) {
-                continue;
+                settings = repoDir.resolve(project.path.resolve("settings.gradle.kts"));
+                if(!Files.exists(settings)) {
+                    continue;
+                }
             }
 
             // Each "includeBuild" line represents an edge in the DAG
