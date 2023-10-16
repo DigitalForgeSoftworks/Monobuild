@@ -3,7 +3,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
-version = '1.4.5'
+version = '1.5.0'
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
@@ -24,6 +24,7 @@ dependencies {
     implementation 'me.alexjs:dag:2.0.0'
     implementation 'com.google.inject:guice:5.0.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
     implementation 'org.digitalforge:sneakythrow:1.0.0'
     implementation 'info.picocli:picocli:4.6.3'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.2.0.202206071550-r'

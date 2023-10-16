@@ -10,19 +10,20 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Streams;
 import me.alexjs.dag.Dag;
 import me.alexjs.dag.DagTraversalTask;
+import org.digitalforge.monobuild.circleci.workflow.Job;
+import org.digitalforge.monobuild.circleci.workflow.Workflow;
+import org.digitalforge.monobuild.config.CircleCiConfig;
+import org.digitalforge.monobuild.helper.*;
 import org.eclipse.jgit.lib.Constants;
 
-import org.digitalforge.monobuild.helper.ProjectHelper;
-import org.digitalforge.monobuild.helper.RepoHelper;
-import org.digitalforge.monobuild.helper.ThreadHelper;
 import org.digitalforge.monobuild.logging.console.Console;
 import org.digitalforge.sneakythrow.SneakyThrow;
 
@@ -176,7 +177,7 @@ public class Monobuild {
             console.infoLeftRight("Project", "Dependency");
             console.footer();
 
-            Map<String, List<String>> outputMap = new HashMap<>();
+            Map<String, List<String>> outputMap = new TreeMap<>();
             for (Project project : dag.getNodes()) {
 
                 List<String> dependencies = dag.getIncoming(project).stream()
@@ -195,9 +196,102 @@ public class Monobuild {
             }
 
             // Write it to a file
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(outputMap);
-            Files.writeString(outputDir.resolve("projects/graph.json"), json);
+            String json = JsonHelper.MAPPER.writeValueAsString(outputMap);
+            writeFile("graph.json", json);
+
+        } catch (IOException e) {
+            throw SneakyThrow.sneak(e);
+        }
+
+        return 0;
+
+    }
+
+    public int circleciWorkflows(String baseRef) {
+
+        if(baseRef == null) {
+            baseRef = MAIN;
+        }
+
+        try {
+
+            CircleCiConfig config = readCircleCiConfig();
+
+            List<Project> allProjects = projectHelper.listAllProjects(repoDir);
+            //TODO: modify main branch to be a configuration thing(monobuildConfig.json perhaps as yml sucks)
+            Collection<String> changedFiles = repoHelper.diff(repoDir.toFile(), oldGitRef, Constants.HEAD, baseRef);
+            List<Project> changedProjects = projectHelper.getChangedProjects(allProjects, changedFiles, repoDir);
+            Dag<Project> dag = projectHelper.getDependencyTree(allProjects, repoDir);
+
+            // Build the affected projects, the projects that they depend on, and the projects that depend on them
+            List<Project> projectsToBuild = changedProjects.stream()
+                    .flatMap(p -> Streams.concat(dag.getAncestors(p).stream(), dag.getDescendants(p).stream(), Stream.of(p)))
+                    .distinct()
+                    .sorted(Comparator.comparing(p -> p.name))
+                    .collect(Collectors.toList());
+
+            Map<String, Workflow> workflows = new TreeMap<>();
+            Workflow buildWorkflow = new Workflow().setJobs(new ArrayList<>());
+
+            buildWorkflow.getJobs().add("initialize");
+
+            for (Project project : projectsToBuild) {
+
+                Path relativePath = repoDir.relativize(project.path);
+
+                Job projectJob = new Job();
+                projectJob.setName("build-" + project.name);
+                projectJob.setProjectdir(relativePath.toString());
+
+
+                List<String> dependencies = dag.getIncoming(project).stream()
+                        .map(p -> "build-" + p.name)
+                        .collect(Collectors.toList());
+                projectJob.setRequires(dependencies);
+
+                if(projectJob.getRequires().isEmpty()) {
+                    projectJob.getRequires().add("initialize");
+                }
+
+                String jobName = "build-" + relativePath.getName(0);
+
+                if(jobName.equals("build-groovy")) {
+                    jobName = "build-java";
+                }
+
+                if(config.getJobs().containsKey(jobName)) {
+
+                    CircleCiConfig.JobConfig jobConfig = config.getJobs().get(jobName);
+
+                    List<String> configContext = jobConfig.getContext();
+
+                    if(!configContext.isEmpty()) {
+                        projectJob.setContext(configContext);
+                    }
+
+                }
+
+                buildWorkflow.getJobs().add(Map.entry(jobName, projectJob));
+
+            }
+
+            if(projectsToBuild.isEmpty()) {
+                buildWorkflow.getJobs().add("build-nothing");
+            }
+            else {
+                buildWorkflow.getJobs().sort(Comparator.comparing(c -> (c instanceof String) ? c.toString() : ((Map.Entry<String, Job>)c).getValue().getName()));
+            }
+
+            workflows.put("build", buildWorkflow);
+
+            Map<String, Map<String, Workflow>> root = new TreeMap<>();
+            root.put("workflows", workflows);
+
+            String yaml = YamlHelper.MAPPER.writeValueAsString(root);
+
+            System.out.println(yaml);
+
+            writeFile("circleci-workflows.yaml", yaml);
 
         } catch (IOException e) {
             throw SneakyThrow.sneak(e);
@@ -294,6 +388,43 @@ public class Monobuild {
         console.infoLeftRight("Repo directory", repoDir);
         console.infoLeftRight("Log directory", logDir);
         console.infoLeftRight("Diff context", oldGitRef + ".." + Constants.HEAD);
+
+    }
+
+    private CircleCiConfig readCircleCiConfig() {
+        return readConfigFile("circleci.json", CircleCiConfig.class);
+    }
+
+    private <T> T readConfigFile(String filename, Class<T> type) {
+
+        try {
+
+            Path file = repoDir.resolve(".monobuild").resolve(filename);
+
+            if(!Files.isReadable(file)) {
+                return null;
+            }
+
+            T content = JsonHelper.MAPPER.readValue(file.toFile(), type);
+
+            return content;
+
+        } catch(IOException ex) {
+            throw SneakyThrow.sneak(ex);
+        }
+
+    }
+
+    private void writeFile(String fileName, String text) {
+
+        try {
+            if(!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+            Files.writeString(outputDir.resolve(fileName), text);
+        } catch (IOException e) {
+            throw SneakyThrow.sneak(e);
+        }
 
     }
 
