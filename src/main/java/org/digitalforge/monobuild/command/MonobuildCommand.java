@@ -54,6 +54,21 @@ public class MonobuildCommand implements Callable<Integer> {
         return monobuild.graph();
     }
 
+    @CommandLine.Command(name = "circleci-workflows", description = "Print a CircleCI config Workflows section for changed projects")
+    public Integer circleciWorkflows(@CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help and exit") boolean help) {
+
+        String baseRef = null;
+        if(buildOptions != null) {
+            baseRef = buildOptions.baseTag;
+            if(baseRef == null) {
+                baseRef = buildOptions.baseBranch;
+            }
+        }
+
+        return monobuild.circleciWorkflows(baseRef);
+
+    }
+
     @CommandLine.Command(name = "deploy", description = "Deploy changed projects in the monorepo")
     public Integer deploy(@CommandLine.Parameters String[] parameters) {
         if(parameters == null) {
