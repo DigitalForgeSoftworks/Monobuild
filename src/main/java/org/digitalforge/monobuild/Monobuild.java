@@ -253,9 +253,11 @@ public class Monobuild {
                     projectJob.getRequires().add("initialize");
                 }
 
+                projectJob.getRequires().sort(String::compareTo);
+
                 String jobName = "build-" + relativePath.getName(0);
 
-                if(jobName.equals("build-groovy")) {
+                if(jobName.equals("build-groovy") || jobName.equals("build-kotlin")) {
                     jobName = "build-java";
                 }
 
