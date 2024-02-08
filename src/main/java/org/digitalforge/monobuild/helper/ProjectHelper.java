@@ -130,9 +130,11 @@ public class ProjectHelper {
                 }
             }
 
+            List<String> lines = Files.readAllLines(settings);
+
             // Each "includeBuild" line represents an edge in the DAG
-            try (Stream<String> lines = Files.lines(settings)) {
-                lines.map(IncludeBuildMatcher.INSTANCE)
+            try (Stream<String> s = lines.stream()) {
+                s.map(IncludeBuildMatcher.INSTANCE)
                         .filter(Matcher::matches)
                         .map(matcher -> matcher.group(1))
                         .map(project.path::resolve)
@@ -142,6 +144,19 @@ public class ProjectHelper {
                         .sorted()
                         .map(dir -> new Project(dir.getFileName().toString(), dir))
                         .forEach(p -> dag.put(p, project));
+            }
+
+            try(Stream<String> s = lines.stream()) {
+                s.map(MonobuildIncludeMatcher.INSTANCE)
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group(1))
+                    .map(project.path::resolve)
+                    .map(repoDir::resolve)
+                    .map(Path::toAbsolutePath)
+                    .map(Path::normalize)
+                    .sorted()
+                    .map(dir -> new Project(dir.getFileName().toString(), dir))
+                    .forEach(p -> dag.put(p, project));
             }
 
         }
@@ -155,6 +170,19 @@ public class ProjectHelper {
         public static final IncludeBuildMatcher INSTANCE = new IncludeBuildMatcher();
 
         private static final Pattern REGEX = Pattern.compile("(?://#)?includeBuild[ \\(*]*['\"](.*)['\"][ \\)]*.*");
+
+        @Override
+        public Matcher apply(String s) {
+            return REGEX.matcher(s);
+        }
+
+    }
+
+    private static class MonobuildIncludeMatcher implements Function<String, Matcher> {
+
+        public static final MonobuildIncludeMatcher INSTANCE = new MonobuildIncludeMatcher();
+
+        private static final Pattern REGEX = Pattern.compile("(//#)?@monobuildInclude@[ \\(*]*['\"](.*)['\"][ \\)]*.*");
 
         @Override
         public Matcher apply(String s) {
