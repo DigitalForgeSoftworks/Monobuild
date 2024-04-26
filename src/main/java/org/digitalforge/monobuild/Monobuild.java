@@ -136,8 +136,8 @@ public class Monobuild {
             BiConsumer<Project, String[]> builder = (project, args2) -> {projectTasks.buildProject(project, args2);};
             DagTraversalTask<Project> buildTask = new DagTraversalTask<>(dag, new BiConsumerTask(args, builder), buildThreadPool);
 
-            if (!buildTask.awaitTermination(30, TimeUnit.MINUTES)) {
-                console.error("Building failed");
+            if (!buildTask.awaitTermination(2, TimeUnit.HOURS)) {
+                console.error("Build failed: Timeout exceeded");
                 return 1;
             }
 
@@ -147,8 +147,8 @@ public class Monobuild {
             BiConsumer<Project, String[]> tester = (project, args2) -> {projectTasks.testProject(project, args2);};
             DagTraversalTask<Project> testTask = new DagTraversalTask<>(dag, new BiConsumerTask(args, tester), testThreadPool);
 
-            if (!testTask.awaitTermination(30, TimeUnit.MINUTES)) {
-                console.error("Testing failed");
+            if (!testTask.awaitTermination(2, TimeUnit.HOURS)) {
+                console.error("Testing failed: Timeout exceeded");
                 return 1;
             }
 
